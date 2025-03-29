@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./db/banco.sql:/docker-entrypoint-initdb.d/banco.sql
+    networks:
+      - app-network
+
+  app:
+    build: ./app
+    container_name: php-app
+    volumes:
+      - ./app:/var/www/html/
+    depends_on:
+      - db
+    networks:
+      - app-network
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    build: ./nginx
+    container_name: nginx-lb
+    ports:
+      - "4500:4500"
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
